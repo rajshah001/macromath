@@ -103,6 +103,17 @@
     padding:8px 14px;border-radius:9px;cursor:pointer;transition:.18s;
   }
   .unit-toggle button.active{background:var(--ink);color:var(--paper);box-shadow:0 3px 8px rgba(0,0,0,.25)}
+
+  .goal-block{margin-top:16px}
+  .goal-label{font-family:"Caveat",cursive;font-size:1.45rem;font-weight:700;color:var(--muted-ink)}
+  .goal-toggle{display:flex;background:rgba(34,33,46,.08);border-radius:14px;padding:5px;gap:5px;margin-top:6px}
+  .goal-toggle button{flex:1;border:0;background:transparent;color:var(--muted-ink);
+    font:700 1.02rem "Space Grotesk",sans-serif;padding:12px 10px;border-radius:10px;cursor:pointer;transition:.18s}
+  .goal-toggle button.active{background:var(--ink);color:var(--paper);box-shadow:0 4px 10px rgba(0,0,0,.25)}
+  .goal-toggle button.lose.active{background:linear-gradient(92deg,#ff8c42,#f43f7f);color:#fff;
+    box-shadow:0 8px 18px rgba(244,63,127,.35)}
+
+  [hidden]{display:none!important}
   .shake{animation:shake .4s}
   @keyframes shake{20%{transform:translateX(-7px) rotate(-.6deg)}45%{transform:translateX(6px) rotate(-.6deg)}70%{transform:translateX(-4px) rotate(-.6deg)}}
 
@@ -168,6 +179,9 @@
     transition:width .8s cubic-bezier(.22,.9,.3,1.2)}
   .fun{font-family:"Caveat",cursive;font-weight:700;font-size:1.28rem;color:var(--muted-ink);margin-top:12px;line-height:1.35}
 
+  .big .dash{font-size:clamp(1.4rem,3vw,1.9rem);color:var(--muted-ink);font-weight:600;align-self:center}
+  .fl-cal .num,.fl-pro .num,.fl-week .num{font-size:clamp(1.9rem,4vw,2.5rem)}
+
   .cal-card{background:var(--note-cal);--r:-1.2deg;--tr:-4deg}
   .donut-card{background:var(--note-don);--r:.9deg;--tr:3deg}
   .pro-card{background:var(--note-pro);--r:1deg;--bc:var(--bar-pro)}
@@ -175,6 +189,12 @@
   .fat-card{background:var(--note-fat);--r:.7deg;--bc:var(--bar-fat)}
   .fib-card{background:var(--note-fib);--r:-1deg;--tr:-2deg;--bc:var(--bar-fib)}
   .wat-card{background:var(--note-wat);--r:.8deg;--bc:var(--bar-wat)}
+
+  .fl-cal{background:var(--note-cal);--r:-1.2deg;--tr:-4deg}
+  .fl-steps{background:var(--note-don);--r:.9deg;--tr:3deg}
+  .fl-pro{background:var(--note-pro);--r:1deg;--bc:var(--bar-pro)}
+  .fl-wat{background:var(--note-wat);--r:-.8deg;--tr:2deg;--bc:var(--bar-wat)}
+  .fl-week{background:var(--note-fib);--r:.8deg;--bc:var(--bar-fib)}
 
   /* donut */
   .donut-flex{display:flex;gap:22px;align-items:center;flex-wrap:wrap;justify-content:center}
@@ -246,6 +266,8 @@
     .pro-card,.car-card,.fat-card{grid-column:span 6}
     .fib-card{grid-column:span 5}
     .wat-card{grid-column:span 7}
+    .fl-cal,.fl-steps,.fl-week{grid-column:span 12}
+    .fl-pro,.fl-wat{grid-column:span 6}
   }
   @media(min-width:1024px){
     .cal-card{grid-column:span 5}
@@ -253,6 +275,9 @@
     .pro-card,.car-card,.fat-card{grid-column:span 4}
     .fib-card{grid-column:span 5}
     .wat-card{grid-column:span 7}
+    .fl-cal{grid-column:span 5}
+    .fl-steps{grid-column:span 7}
+    .fl-pro,.fl-wat,.fl-week{grid-column:span 4}
   }
   @media(max-width:420px){
     .weight-row{flex-direction:column}
@@ -298,6 +323,13 @@
           </div>
         </div>
       </div>
+      <div class="goal-block">
+        <span class="goal-label">my goal is…</span>
+        <div class="goal-toggle" role="group" aria-label="Goal">
+          <button type="button" data-goal="maintain" class="active">⚖️ maintain</button>
+          <button type="button" data-goal="lose" class="lose">🔥 lose fat</button>
+        </div>
+      </div>
       <input id="slider" type="range" min="40" max="160" step="1" value="70" aria-label="Weight slider">
       <div class="chips" id="chips" aria-label="Quick pick weight"></div>
       <button id="go">Cook up my numbers 🔥</button>
@@ -306,8 +338,8 @@
 
   <section class="results empty" id="results" aria-live="polite">
     <div class="sec-head">
-      <h2>Your daily spread 🍽️</h2>
-      <span class="hand">freshly calculated, served on sticky notes</span>
+      <h2 id="resTitle">Your daily spread 🍽️</h2>
+      <span class="hand" id="resSub">freshly calculated, served on sticky notes</span>
     </div>
 
     <div class="empty-note">
@@ -315,7 +347,7 @@
       <span>Pop a number in the box above — I'll do the math.</span>
     </div>
 
-    <div class="grid">
+    <div class="grid" id="gridMaintain">
 
       <article class="card cal-card">
         <div class="card-head"><span class="emoji">🔥</span><h3>Calories</h3></div>
@@ -388,6 +420,50 @@
       </article>
 
     </div>
+
+    <div class="grid" id="gridLose" hidden>
+
+      <article class="card fl-cal">
+        <div class="card-head"><span class="emoji">🔥</span><h3>Calories</h3></div>
+        <div class="big"><span class="num" id="flCalLo">0</span><span class="dash">–</span><span class="num" id="flCalHi">0</span><span class="unit">kcal / day</span></div>
+        <span class="eq">weight × 22 – 24</span>
+        <div class="bar"><i id="barFlCal" style="--bc:var(--bar-cal)"></i></div>
+        <p class="fun" id="funFlCal"></p>
+      </article>
+
+      <article class="card fl-steps">
+        <div class="card-head"><span class="emoji">👟</span><h3>Steps</h3></div>
+        <div class="big"><span class="num" id="flSteps">0</span><span class="unit">steps / day</span></div>
+        <span class="eq">weight × 100</span>
+        <div class="bar"><i id="barFlSteps" style="--bc:#8b7cf6"></i></div>
+        <p class="fun" id="funFlSteps"></p>
+      </article>
+
+      <article class="card fl-pro">
+        <div class="card-head"><span class="emoji">🥩</span><h3>Protein</h3></div>
+        <div class="big"><span class="num" id="flProLo">0</span><span class="dash">–</span><span class="num" id="flProHi">0</span><span class="unit">g / day</span></div>
+        <span class="eq">weight × 1.6 – 2</span>
+        <div class="bar"><i id="barFlPro"></i></div>
+        <p class="fun" id="funFlPro"></p>
+      </article>
+
+      <article class="card fl-wat">
+        <div class="card-head"><span class="emoji">💧</span><h3>Water</h3></div>
+        <div class="big"><span class="num" id="flWater">0</span><span class="unit">L / day</span></div>
+        <span class="eq">weight × 40 <small>(ml per kg)</small></span>
+        <div class="cups" id="cupsLose"></div>
+        <p class="fun" id="funFlWat"></p>
+      </article>
+
+      <article class="card fl-week">
+        <div class="card-head"><span class="emoji">⚖️</span><h3>Realistic loss</h3></div>
+        <div class="big"><span class="num" id="flWeekLo">0</span><span class="dash">–</span><span class="num" id="flWeekHi">0</span><span class="unit">kg / week</span></div>
+        <span class="eq">weight × 0.5 – 1%</span>
+        <div class="bar"><i id="barFlWeek" style="--bc:var(--bar-fib)"></i></div>
+        <p class="fun" id="funFlWeek"></p>
+      </article>
+
+    </div>
   </section>
 
   <section class="math-section results empty" id="mathSection">
@@ -423,6 +499,7 @@
   };
 
   let unit = 'kg';
+  let goal = 'maintain';
   let last = null;       // last computed values (kg-based)
   let revealed = false;
 
@@ -481,20 +558,20 @@
   }
 
   /* ---------- water cups ---------- */
-  function renderCups(liters){
+  function renderCups(liters, cont = els.cups){
     const glass = 0.25;
     const n = Math.min(16, Math.max(1, Math.ceil(liters / glass)));
-    if (els.cups.childElementCount !== n){
-      els.cups.innerHTML = '';
+    if (cont.childElementCount !== n){
+      cont.innerHTML = '';
       for (let i = 0; i < n; i++){
         const cup = document.createElement('span');
         cup.className = 'cup';
         const fill = document.createElement('i');
         cup.appendChild(fill);
-        els.cups.appendChild(cup);
+        cont.appendChild(cup);
       }
     }
-    [...els.cups.children].forEach((cup, i) => {
+    [...cont.children].forEach((cup, i) => {
       const fill = Math.max(0, Math.min(1, (liters - i * glass) / glass));
       const bar = cup.firstChild;
       bar.style.transitionDelay = (RM ? 0 : i * 45) + 'ms';
@@ -504,17 +581,7 @@
   }
 
   /* ---------- math trail steps ---------- */
-  function renderSteps(r){
-    const kgTxt = (Math.round(r.kg * 10) / 10).toLocaleString('en-US');
-    const kcalTxt = int(r.calories);
-    const items = [
-      { n:1, op:`${kgTxt} <small>kg</small> × 26`,            res:int(r.calories), unit:'kcal', c:'var(--note-cal)', e:'🔥' },
-      { n:2, op:`${kgTxt} <small>kg</small> × 2`,             res:int(r.protein),  unit:'g protein', c:'var(--note-pro)', e:'🥩' },
-      { n:3, op:`${kcalTxt} <small>kcal</small> ÷ 30`,        res:int(r.fat),      unit:'g fat', c:'var(--note-fat)', e:'🥑' },
-      { n:4, op:`${kcalTxt} <small>kcal</small> × 0.014`,     res:int(r.fiber),    unit:'g fiber', c:'var(--note-fib)', e:'🥦' },
-      { n:5, op:`(${kcalTxt} − ${int(r.protein)}×4 − ${int(r.fat)}×9) ÷ 4`, res:int(r.carbs), unit:'g carbs', c:'var(--note-car)', e:'🍚' },
-      { n:6, op:`${kgTxt} <small>kg</small> ÷ 30`,            res:one(r.water),    unit:'L water', c:'var(--note-wat)', e:'💧' },
-    ];
+  function renderSteps(items){
     els.steps.innerHTML = items.map(it => `
       <div class="step">
         <span class="n">${it.n}</span>
@@ -522,6 +589,30 @@
         <span class="arrow">→</span>
         <span class="res" style="--c:${it.c}">${it.e} ${it.res} <small>${it.unit}</small></span>
       </div>`).join('');
+  }
+
+  function itemsMaintain(r){
+    const kgTxt = (Math.round(r.kg * 10) / 10).toLocaleString('en-US');
+    const kcalTxt = int(r.calories);
+    return [
+      { n:1, op:`${kgTxt} <small>kg</small> × 26`,            res:int(r.calories), unit:'kcal', c:'var(--note-cal)', e:'🔥' },
+      { n:2, op:`${kgTxt} <small>kg</small> × 2`,             res:int(r.protein),  unit:'g protein', c:'var(--note-pro)', e:'🥩' },
+      { n:3, op:`${kcalTxt} <small>kcal</small> ÷ 30`,        res:int(r.fat),      unit:'g fat', c:'var(--note-fat)', e:'🥑' },
+      { n:4, op:`${kcalTxt} <small>kcal</small> × 0.014`,     res:int(r.fiber),    unit:'g fiber', c:'var(--note-fib)', e:'🥦' },
+      { n:5, op:`(${kcalTxt} − ${int(r.protein)}×4 − ${int(r.fat)}×9) ÷ 4`, res:int(r.carbs), unit:'g carbs', c:'var(--note-car)', e:'🍚' },
+      { n:6, op:`${kgTxt} <small>kg</small> ÷ 30`,            res:one(r.water),    unit:'L water', c:'var(--note-wat)', e:'💧' },
+    ];
+  }
+
+  function itemsLose(r){
+    const kgTxt = (Math.round(r.kg * 10) / 10).toLocaleString('en-US');
+    return [
+      { n:1, op:`${kgTxt} <small>kg</small> × 100`,      res:int(r.kg*100),  unit:'steps', c:'var(--note-don)', e:'👟' },
+      { n:2, op:`${kgTxt} <small>kg</small> × 22–24`,    res:`${int(r.kg*22)}–${int(r.kg*24)}`, unit:'kcal', c:'var(--note-cal)', e:'🔥' },
+      { n:3, op:`${kgTxt} <small>kg</small> × 1.6–2`,    res:`${int(r.kg*1.6)}–${int(r.kg*2)}`, unit:'g protein', c:'var(--note-pro)', e:'🥩' },
+      { n:4, op:`${kgTxt} <small>kg</small> × 40`,       res:one(r.kg*0.040), unit:'L water', c:'var(--note-wat)', e:'💧' },
+      { n:5, op:`${kgTxt} <small>kg</small> × 0.5–1%`,   res:`${trim(r.kg*0.005)}–${trim(r.kg*0.01)}`, unit:'kg / week', c:'var(--note-fib)', e:'⚖️' },
+    ];
   }
 
   /* ---------- main update ---------- */
@@ -534,6 +625,13 @@
 
     const r = calc(unit === 'kg' ? raw : raw / LB);
     last = r;
+
+    const isLose = goal === 'lose';
+    $('#gridMaintain').hidden = isLose;
+    $('#gridLose').hidden = !isLose;
+    $('#resTitle').textContent = isLose ? 'Your fat-loss numbers 🔥' : 'Your daily spread 🍽️';
+    $('#resSub').textContent = isLose ? 'the 5-step formula, on a wall of sticky notes' : 'freshly calculated, served on sticky notes';
+    if (isLose){ updateLose(r); if (!revealed){ revealed = true; revealCards(); } return; }
 
     countUp($('#calories'), r.calories, int);
     countUp($('#centerCal'), r.calories, int);
@@ -576,10 +674,41 @@
     $('#funFat').textContent = `≈ ${int(r.fat/14)} avocados 🥑`;
     $('#funWat').textContent = `≈ ${Math.round(r.water*4)} glasses (250 ml) — yes, that's a few bathroom trips 🚻`;
 
-    renderCups(r.water);
-    renderSteps(r);
+    renderCups(r.water, els.cups);
+    renderSteps(itemsMaintain(r));
 
     if (!revealed){ revealed = true; revealCards(); }
+  }
+
+  /* ---------- fat-loss mode (weight × 100 steps · ×22–24 kcal · ×1.6–2 protein · ×40 ml · 0.5–1%/wk) ---------- */
+  const trim = v => String(parseFloat(v.toFixed(2)));
+  function updateLose(r){
+    const kg = r.kg;
+    const calLo = kg * 22, calHi = kg * 24;
+    const proLo = kg * 1.6, proHi = kg * 2;
+    const waterL = kg * 0.040;
+    const steps = kg * 100;
+    const wkLo = kg * 0.005, wkHi = kg * 0.01;
+
+    countUp($('#flCalLo'), calLo, int);  countUp($('#flCalHi'), calHi, int);
+    countUp($('#flProLo'), proLo, int);  countUp($('#flProHi'), proHi, int);
+    countUp($('#flSteps'), steps, int);
+    countUp($('#flWater'), waterL, one);
+    countUp($('#flWeekLo'), wkLo, trim); countUp($('#flWeekHi'), wkHi, trim);
+
+    $('#barFlCal').style.width   = (calHi / r.calories * 100) + '%';
+    $('#barFlSteps').style.width = Math.min(100, steps / 10000 * 100) + '%';
+    $('#barFlPro').style.width   = '100%';
+    $('#barFlWeek').style.width  = Math.min(100, wkHi / 2 * 100) + '%';
+
+    $('#funFlCal').textContent   = `≈ ${int(kg*2)}–${int(kg*4)} kcal under your maintain day 📉`;
+    $('#funFlSteps').textContent = `≈ ${Math.round(steps/100)} min of brisk walking 🚶‍♀️ · ${Math.round(steps/10000*100)}% of the 10k goal`;
+    $('#funFlPro').textContent   = `≈ ${Math.max(1, Math.floor(proLo/46))}–${Math.ceil(proHi/46)} chicken breasts 🍗`;
+    $('#funFlWat').textContent   = `≈ ${Math.round(waterL*4)} glasses (250 ml) — thirstier with workouts 🚻`;
+    $('#funFlWeek').textContent  = `≈ ${trim(wkLo*4.33)}–${trim(wkHi*4.33)} kg a month — slow & steady 📉`;
+
+    renderCups(waterL, $('#cupsLose'));
+    renderSteps(itemsLose(r));
   }
 
   function revealCards(){
@@ -630,6 +759,21 @@
   }
   renderChips();
 
+  document.querySelectorAll('.goal-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.goal === goal) return;
+      goal = btn.dataset.goal;
+      document.querySelectorAll('.goal-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+      els.go.textContent = goal === 'lose' ? 'Cook up my fat-loss plan 🔥' : 'Cook up my numbers 🔥';
+      const gridSel = goal === 'lose' ? '#gridLose' : '#gridMaintain';
+      document.querySelectorAll(`${gridSel} .card`).forEach((c, i) => {
+        c.classList.remove('show');
+        setTimeout(() => c.classList.add('show'), RM ? 0 : 90 * i);
+      });
+      recalc();
+    });
+  });
+
   function go(){
     const raw = parseFloat(els.weight.value);
     if (!Number.isFinite(raw) || raw < 20 || raw > 400){
@@ -651,7 +795,18 @@
     if (!last){ go(); }
     if (!last) return;
     const r = last;
-    const txt =
+    let txt;
+    if (goal === 'lose'){
+      txt =
+`MY FAT-LOSS NUMBERS (${(Math.round(r.kg*10)/10)} kg)
+👟 Steps: ${int(r.kg*100)} / day
+🔥 Calories: ${int(r.kg*22)}–${int(r.kg*24)} kcal
+🥩 Protein: ${int(r.kg*1.6)}–${int(r.kg*2)} g
+💧 Water: ${one(r.kg*0.040)} L / day
+⚖️ Realistic loss: ${trim(r.kg*0.005)}–${trim(r.kg*0.01)} kg / week
+— macro·math`;
+    } else {
+      txt =
 `MY DAILY NUMBERS (${(Math.round(r.kg*10)/10)} kg)
 🔥 Calories: ${int(r.calories)} kcal
 🥩 Protein: ${int(r.protein)} g
@@ -660,6 +815,7 @@
 🥦 Fiber: ${int(r.fiber)} g
 💧 Water: ${one(r.water)} L (~${Math.round(r.water*4)} glasses)
 — macro·math`;
+    }
     try{
       await navigator.clipboard.writeText(txt);
       els.copy.textContent = '✅ Copied!';
