@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101018">
+<title>Macro·Math — one number in, your whole day out</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧮</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101018;
+    --ink:#22212e;
+    --muted-ink:rgba(34,33,46,.62);
+    --paper:#faf6ec;
+    --note-cal:#ffd9a0;  --bar-cal:#ff8c42;
+    --note-pro:#ffc2d4;  --bar-pro:#f43f7f;
+    --note-car:#fdf3a0;  --bar-car:#eab308;
+    --note-fat:#b8f3ea;  --bar-fat:#14b8a6;
+    --note-fib:#cdf3c2;  --bar-fib:#84cc16;
+    --note-wat:#bcdcff;  --bar-wat:#38bdf8;
+    --note-don:#e3d7ff;
+    --txt:#f4f2ec;
+    --txt-dim:rgba(244,242,236,.6);
+    --seg-pro:#e6337e; --seg-car:#f59e0b; --seg-fat:#0ea5a4;
+    --r-lg:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Space Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:var(--bg); color:var(--txt);
+    min-height:100vh; overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--bar-cal);color:#1a1206}
+
+  /* ---------- ambient background ---------- */
+  .bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.16}
+  .blob.b1{width:520px;height:520px;background:#ff8c42;top:-160px;left:-120px}
+  .blob.b2{width:460px;height:460px;background:#38bdf8;bottom:-140px;right:-120px}
+  .blob.b3{width:380px;height:380px;background:#f43f7f;top:38%;left:58%;opacity:.10}
+  .float-emoji{position:absolute;font-size:34px;opacity:.07;animation:drift 16s ease-in-out infinite alternate}
+  @keyframes drift{
+    from{transform:translateY(0) rotate(-8deg)}
+    to{transform:translateY(-46px) rotate(10deg)}
+  }
+  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  .wrap{position:relative;z-index:2;max-width:1120px;margin:0 auto;padding:0 20px 80px}
+
+  /* ---------- header ---------- */
+  header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:26px 0 8px;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:12px;font-weight:700;font-size:1.25rem;letter-spacing:.5px}
+  .logo .wordmark{display:inline-flex;align-items:center}
+  .logo .dot-sep{flex:none;width:7px;height:7px;border-radius:50%;margin:0 5px;
+    background:linear-gradient(90deg,var(--bar-cal),var(--bar-pro));transform:translateY(-1px)}
+  .logo .cube{display:grid;place-items:center;width:42px;height:42px;background:var(--note-cal);color:var(--ink);
+    border-radius:10px;transform:rotate(-6deg);box-shadow:0 8px 20px rgba(255,140,66,.35);font-size:1.3rem}
+  .logo em{font-style:normal;background:linear-gradient(90deg,var(--bar-cal),var(--bar-pro));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .head-note{font-family:"Caveat",cursive;font-size:1.25rem;color:var(--txt-dim);transform:rotate(-2deg);
+    border:1.5px dashed rgba(244,242,236,.25);border-radius:10px;padding:4px 14px}
+
+  /* ---------- hero ---------- */
+  .hero{text-align:center;padding:44px 0 8px}
+  .hero .kicker{font-family:"Caveat",cursive;font-size:clamp(1.4rem,3vw,1.8rem);color:var(--bar-cal);transform:rotate(-1.5deg);display:inline-block}
+  .hero h1{font-size:clamp(2.5rem,7vw,4.6rem);line-height:1.02;letter-spacing:-1.5px;font-weight:700;margin:8px 0 14px}
+  .hero h1 .grad{background:linear-gradient(90deg,#ffb37b,#ff9ec3,#b8f3ea);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.sub{color:var(--txt-dim);max-width:560px;margin:0 auto;font-size:clamp(1rem,2vw,1.15rem);line-height:1.55}
+
+  /* ---------- input card ---------- */
+  .input-card{
+    max-width:620px;margin:34px auto 0;background:var(--paper);color:var(--ink);
+    border-radius:24px;padding:26px 26px 28px;box-shadow:0 30px 60px rgba(0,0,0,.45);
+    transform:rotate(-.6deg);position:relative;
+  }
+  .input-card::before{ /* washi tape */
+    content:"";position:absolute;top:-14px;left:50%;transform:translateX(-50%) rotate(-3deg);
+    width:120px;height:28px;background:rgba(255,158,195,.75);border-radius:4px;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
+  .input-card label{font-family:"Caveat",cursive;font-size:1.55rem;font-weight:700;color:var(--muted-ink)}
+  .weight-row{display:flex;gap:12px;align-items:stretch;margin-top:6px}
+  .weight-field{
+    flex:1;display:flex;align-items:center;gap:10px;background:#fff;
+    border:2.5px solid var(--ink);border-radius:16px;padding:8px 16px;
+    transition:box-shadow .2s, transform .15s;
+  }
+  .weight-field:focus-within{box-shadow:6px 6px 0 var(--bar-cal);transform:translate(-1px,-1px)}
+  .weight-field input{
+    flex:1;min-width:0;border:0;outline:0;background:transparent;
+    font:700 clamp(2.2rem,6vw,3rem)/1.1 "Space Grotesk",sans-serif;color:var(--ink);
+  }
+  input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield;appearance:textfield}
+  .unit-toggle{display:flex;background:rgba(34,33,46,.08);border-radius:12px;padding:4px;gap:4px;align-self:center}
+  .unit-toggle button{
+    border:0;background:transparent;color:var(--muted-ink);font:700 1rem "Space Grotesk",sans-serif;
+    padding:8px 14px;border-radius:9px;cursor:pointer;transition:.18s;
+  }
+  .unit-toggle button.active{background:var(--ink);color:var(--paper);box-shadow:0 3px 8px rgba(0,0,0,.25)}
+  .shake{animation:shake .4s}
+  @keyframes shake{20%{transform:translateX(-7px) rotate(-.6deg)}45%{transform:translateX(6px) rotate(-.6deg)}70%{transform:translateX(-4px) rotate(-.6deg)}}
+
+  input[type=range]{width:100%;margin:20px 0 6px;accent-color:var(--bar-cal);height:26px;cursor:pointer}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+  .chips button{
+    border:1.5px solid rgba(34,33,46,.28);background:transparent;color:var(--ink);
+    font:600 .92rem "Space Grotesk",sans-serif;padding:7px 14px;border-radius:999px;cursor:pointer;transition:.15s;
+  }
+  .chips button:hover{background:var(--ink);color:var(--paper)}
+  #go{
+    width:100%;margin-top:20px;border:0;border-radius:16px;padding:17px;cursor:pointer;
+    font:700 clamp(1.05rem,2.6vw,1.3rem) "Space Grotesk",sans-serif;color:#fff;letter-spacing:.3px;
+    background:linear-gradient(92deg,#ff8c42,#f43f7f);
+    box-shadow:0 14px 30px rgba(244,63,127,.4);
+    transition:transform .15s, box-shadow .15s;
+  }
+  #go:hover{transform:translateY(-2px);box-shadow:0 18px 36px rgba(244,63,127,.5)}
+  #go:active{transform:translateY(1px)}
+
+  /* ---------- results ---------- */
+  .results{margin-top:64px}
+  .sec-head{text-align:center;margin-bottom:26px}
+  .sec-head h2{font-size:clamp(1.7rem,4.5vw,2.5rem);letter-spacing:-.5px}
+  .sec-head .hand{font-family:"Caveat",cursive;font-size:clamp(1.2rem,3vw,1.5rem);color:var(--txt-dim);display:block;margin-top:4px;transform:rotate(-1deg)}
+
+  .empty-note{
+    display:none;flex-direction:column;align-items:center;gap:10px;text-align:center;
+    border:2.5px dashed rgba(244,242,236,.22);border-radius:var(--r-lg);padding:56px 20px;color:var(--txt-dim);
+    font-size:1.1rem;
+  }
+  .empty-note .big-emoji{font-size:2.6rem}
+  .results.empty .empty-note{display:flex}
+  .results.empty .grid{display:none}
+
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:20px}
+
+  .card{
+    grid-column:span 12;position:relative;border-radius:var(--r-lg);padding:24px 22px 20px;color:var(--ink);
+    background:var(--c,var(--paper));
+    box-shadow:0 18px 36px rgba(0,0,0,.35);
+    transform:rotate(var(--r,0deg));
+    transition:transform .25s, box-shadow .25s;
+    opacity:0;translate:0 26px;
+  }
+  .card.show{opacity:1;translate:0 0;transition:transform .25s, box-shadow .25s, opacity .55s, translate .55s}
+  .card.show:hover{transform:rotate(0deg) translateY(-5px);box-shadow:0 26px 46px rgba(0,0,0,.45)}
+  .card::before{ /* tape strip */
+    content:"";position:absolute;top:-12px;left:50%;transform:translateX(-50%) rotate(var(--tr,-3deg));
+    width:86px;height:24px;background:rgba(255,255,255,.5);border-radius:3px;
+    box-shadow:0 2px 5px rgba(0,0,0,.12);backdrop-filter:blur(1px);
+  }
+  .card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .card-head .emoji{font-size:1.7rem}
+  .card-head h3{font-size:1.02rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted-ink)}
+  .big{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .big .num{font-size:clamp(2.4rem,5.4vw,3.4rem);font-weight:700;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+  .big .unit{font-weight:600;color:var(--muted-ink);font-size:1.05rem}
+  .eq{display:inline-block;margin-top:10px;background:rgba(34,33,46,.09);border-radius:999px;
+    padding:5px 13px;font-size:.88rem;font-weight:600;color:var(--muted-ink)}
+  .bar{height:11px;border-radius:999px;background:rgba(34,33,46,.13);margin-top:14px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;border-radius:999px;background:var(--bc,#333);
+    transition:width .8s cubic-bezier(.22,.9,.3,1.2)}
+  .fun{font-family:"Caveat",cursive;font-weight:700;font-size:1.28rem;color:var(--muted-ink);margin-top:12px;line-height:1.35}
+
+  .cal-card{background:var(--note-cal);--r:-1.2deg;--tr:-4deg}
+  .donut-card{background:var(--note-don);--r:.9deg;--tr:3deg}
+  .pro-card{background:var(--note-pro);--r:1deg;--bc:var(--bar-pro)}
+  .car-card{background:var(--note-car);--r:-.8deg;--tr:2deg;--bc:var(--bar-car)}
+  .fat-card{background:var(--note-fat);--r:.7deg;--bc:var(--bar-fat)}
+  .fib-card{background:var(--note-fib);--r:-1deg;--tr:-2deg;--bc:var(--bar-fib)}
+  .wat-card{background:var(--note-wat);--r:.8deg;--bc:var(--bar-wat)}
+
+  /* donut */
+  .donut-flex{display:flex;gap:22px;align-items:center;flex-wrap:wrap;justify-content:center}
+  .donut-wrap{position:relative;width:min(230px,58vw)}
+  .donut{width:100%;height:auto;display:block}
+  .donut .track{fill:none;stroke:rgba(34,33,46,.1);stroke-width:32}
+  .donut .seg{fill:none;stroke-width:32;transition:stroke-dasharray .9s cubic-bezier(.3,.8,.3,1), stroke-dashoffset .9s cubic-bezier(.3,.8,.3,1)}
+  .donut-center{position:absolute;inset:0;display:grid;place-content:center;text-align:center;pointer-events:none}
+  .donut-center b{font-size:clamp(1.5rem,3.4vw,1.9rem);font-weight:700;font-variant-numeric:tabular-nums}
+  .donut-center span{font-size:.78rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted-ink)}
+  .legend{display:flex;flex-direction:column;gap:10px;min-width:180px;flex:1}
+  .legend .row{display:flex;align-items:center;gap:10px;font-weight:600}
+  .legend .dot{width:13px;height:13px;border-radius:4px;flex:none}
+  .legend .lbl{flex:1}
+  .legend .val{font-variant-numeric:tabular-nums;color:var(--muted-ink);font-size:.95rem}
+  .legend .pct{font-weight:700;font-variant-numeric:tabular-nums}
+
+  /* water cups */
+  .cups{display:grid;grid-template-columns:repeat(auto-fill,minmax(30px,1fr));gap:8px;margin-top:16px}
+  .cup{position:relative;height:44px;border:2.5px solid rgba(34,33,46,.55);border-top-width:1.5px;
+    border-radius:4px 4px 10px 10px;overflow:hidden;background:rgba(255,255,255,.35)}
+  .cup i{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(180deg,#7dd3fc,#0ea5e9);
+    transition:height .7s cubic-bezier(.3,.8,.3,1)}
+  .cup.full i{box-shadow:0 0 12px rgba(14,165,233,.6)}
+
+  /* fiber target note */
+  .fib-done{color:#3f6212;font-weight:700}
+
+  /* ---------- math trail ---------- */
+  .math-section{margin-top:80px}
+  .steps{display:grid;grid-template-columns:1fr;gap:16px;max-width:860px;margin:0 auto}
+  .step{
+    display:flex;align-items:center;gap:11px;flex-wrap:wrap;
+    background:var(--paper);color:var(--ink);border-radius:16px;padding:14px 18px;
+    box-shadow:0 12px 26px rgba(0,0,0,.3);transform:rotate(var(--r,0deg));
+    transition:transform .2s;
+  }
+  .step:hover{transform:rotate(0) scale(1.015)}
+  .step .n{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;
+    background:#8b7cf6;color:#fff;font-weight:700;font-size:1.05rem;box-shadow:0 5px 12px rgba(139,124,246,.45)}
+  .step .op{font-weight:600;font-size:.98rem;flex:1;min-width:120px}
+  .step .op small{color:var(--muted-ink);font-weight:600}
+  .step .arrow{color:var(--muted-ink);font-size:1.1rem}
+  .step .res{display:inline-flex;align-items:baseline;gap:5px;border-radius:11px;padding:7px 12px;
+    font-weight:700;font-size:1.02rem;background:var(--c,#eee);white-space:nowrap}
+  .step .res small{font-weight:600;color:var(--muted-ink);font-size:.78rem}
+  @media(min-width:720px){
+    .steps{grid-template-columns:1fr 1fr}
+    .step:nth-child(odd){--r:-.7deg}
+    .step:nth-child(even){--r:.6deg}
+  }
+
+  .copy-row{text-align:center;margin-top:40px}
+  #copy{
+    border:2px solid rgba(244,242,236,.35);background:transparent;color:var(--txt);
+    font:600 1rem "Space Grotesk",sans-serif;padding:13px 26px;border-radius:999px;cursor:pointer;transition:.2s;
+  }
+  #copy:hover{background:var(--txt);color:var(--bg)}
+
+  footer{margin-top:70px;text-align:center;color:var(--txt-dim);font-size:.88rem;line-height:1.7}
+  footer .hand{font-family:"Caveat",cursive;font-size:1.25rem;color:rgba(244,242,236,.45);display:block;margin-bottom:6px}
+  footer .credit{display:block;margin-top:10px;letter-spacing:.4px}
+  footer .credit strong{color:var(--txt);font-weight:700}
+
+  #confetti{position:fixed;inset:0;z-index:50;pointer-events:none}
+
+  /* ---------- responsive ---------- */
+  @media(min-width:680px){
+    .pro-card,.car-card,.fat-card{grid-column:span 6}
+    .fib-card{grid-column:span 5}
+    .wat-card{grid-column:span 7}
+  }
+  @media(min-width:1024px){
+    .cal-card{grid-column:span 5}
+    .donut-card{grid-column:span 7}
+    .pro-card,.car-card,.fat-card{grid-column:span 4}
+    .fib-card{grid-column:span 5}
+    .wat-card{grid-column:span 7}
+  }
+  @media(max-width:420px){
+    .weight-row{flex-direction:column}
+    .unit-toggle{align-self:flex-end}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <span class="float-emoji" style="top:12%;left:6%;animation-delay:-2s">🥑</span>
+  <span class="float-emoji" style="top:64%;left:4%;animation-delay:-6s;animation-duration:20s">🍗</span>
+  <span class="float-emoji" style="top:22%;right:7%;animation-delay:-4s;animation-duration:18s">🥦</span>
+  <span class="float-emoji" style="top:74%;right:9%;animation-delay:-9s">🍌</span>
+  <span class="float-emoji" style="top:44%;left:46%;animation-delay:-12s;animation-duration:22s">💧</span>
+</div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="wrap">
+  <header>
+    <div class="logo"><span class="cube">🧮</span><span class="wordmark">macro<span class="dot-sep" aria-hidden="true"></span><em>math</em></span></div>
+    <div class="head-note">the viral sticky-note formula, minus the shouting ✏️</div>
+  </header>
+
+  <section class="hero">
+    <span class="kicker">~ no sign-up · no math degree ~</span>
+    <h1>One number in.<br><span class="grad">Your whole day out.</span></h1>
+    <p class="sub">Type your weight and get your daily calories, protein, carbs, fat, fiber and water — plated up like a menu, straight from the internet's favorite nutrition math.</p>
+
+    <div class="input-card">
+      <label for="weight">my weight is…</label>
+      <div class="weight-row">
+        <div class="weight-field" id="field">
+          <input id="weight" type="number" inputmode="decimal" min="20" max="400" step="0.1" placeholder="70" autocomplete="off">
+          <div class="unit-toggle" role="group" aria-label="Units">
+            <button type="button" data-unit="kg" class="active">kg</button>
+            <button type="button" data-unit="lb">lb</button>
+          </div>
+        </div>
+      </div>
+      <input id="slider" type="range" min="40" max="160" step="1" value="70" aria-label="Weight slider">
+      <div class="chips" id="chips" aria-label="Quick pick weight"></div>
+      <button id="go">Cook up my numbers 🔥</button>
+    </div>
+  </section>
+
+  <section class="results empty" id="results" aria-live="polite">
+    <div class="sec-head">
+      <h2>Your daily spread 🍽️</h2>
+      <span class="hand">freshly calculated, served on sticky notes</span>
+    </div>
+
+    <div class="empty-note">
+      <span class="big-emoji">👆</span>
+      <span>Pop a number in the box above — I'll do the math.</span>
+    </div>
+
+    <div class="grid">
+
+      <article class="card cal-card">
+        <div class="card-head"><span class="emoji">🔥</span><h3>Calories</h3></div>
+        <div class="big"><span class="num" id="calories">0</span><span class="unit">kcal / day</span></div>
+        <span class="eq">weight × 26</span>
+        <div class="bar"><i id="barCal" style="--bc:var(--bar-cal)"></i></div>
+        <p class="fun" id="funCal"></p>
+      </article>
+
+      <article class="card donut-card">
+        <div class="card-head"><span class="emoji">🎯</span><h3>Where the calories come from</h3></div>
+        <div class="donut-flex">
+          <div class="donut-wrap">
+            <svg class="donut" viewBox="0 0 200 200" role="img" aria-label="Macro split donut chart">
+              <g transform="rotate(-90 100 100)">
+                <circle class="track" cx="100" cy="100" r="70"/>
+                <circle class="seg" id="segP" cx="100" cy="100" r="70" stroke="var(--seg-pro)"/>
+                <circle class="seg" id="segC" cx="100" cy="100" r="70" stroke="var(--seg-car)"/>
+                <circle class="seg" id="segF" cx="100" cy="100" r="70" stroke="var(--seg-fat)"/>
+              </g>
+            </svg>
+            <div class="donut-center"><b id="centerCal">0</b><span>kcal</span></div>
+          </div>
+          <div class="legend">
+            <div class="row"><span class="dot" style="background:var(--seg-pro)"></span><span class="lbl">Protein</span><span class="val" id="gPcal"></span><span class="pct" id="pctP">–</span></div>
+            <div class="row"><span class="dot" style="background:var(--seg-car)"></span><span class="lbl">Carbs</span><span class="val" id="gCcal"></span><span class="pct" id="pctC">–</span></div>
+            <div class="row"><span class="dot" style="background:var(--seg-fat)"></span><span class="lbl">Fat</span><span class="val" id="gFcal"></span><span class="pct" id="pctF">–</span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card pro-card">
+        <div class="card-head"><span class="emoji">🥩</span><h3>Protein</h3></div>
+        <div class="big"><span class="num" id="protein">0</span><span class="unit">g</span></div>
+        <span class="eq">weight × 2</span>
+        <div class="bar"><i id="barPro"></i></div>
+        <p class="fun" id="funPro"></p>
+      </article>
+
+      <article class="card car-card">
+        <div class="card-head"><span class="emoji">🍚</span><h3>Carbs</h3></div>
+        <div class="big"><span class="num" id="carbs">0</span><span class="unit">g</span></div>
+        <span class="eq">(kcal − protein×4 − fat×9) ÷ 4</span>
+        <div class="bar"><i id="barCar"></i></div>
+        <p class="fun" id="funCar"></p>
+      </article>
+
+      <article class="card fat-card">
+        <div class="card-head"><span class="emoji">🥑</span><h3>Fat</h3></div>
+        <div class="big"><span class="num" id="fat">0</span><span class="unit">g</span></div>
+        <span class="eq">kcal ÷ 30</span>
+        <div class="bar"><i id="barFat"></i></div>
+        <p class="fun" id="funFat"></p>
+      </article>
+
+      <article class="card fib-card">
+        <div class="card-head"><span class="emoji">🥦</span><h3>Fiber</h3></div>
+        <div class="big"><span class="num" id="fiber">0</span><span class="unit">g</span></div>
+        <span class="eq">kcal × 0.014 <small>(the classic 14 g per 1,000 kcal rule)</small></span>
+        <div class="bar"><i id="barFib"></i></div>
+        <p class="fun" id="funFib"></p>
+      </article>
+
+      <article class="card wat-card">
+        <div class="card-head"><span class="emoji">💧</span><h3>Water</h3></div>
+        <div class="big"><span class="num" id="water">0</span><span class="unit">L / day</span></div>
+        <span class="eq">weight ÷ 30</span>
+        <div class="cups" id="cups"></div>
+        <p class="fun" id="funWat"></p>
+      </article>
+
+    </div>
+  </section>
+
+  <section class="math-section results empty" id="mathSection">
+    <div class="sec-head">
+      <h2>The math, no magic ✏️</h2>
+      <span class="hand">your numbers, step by step — just like the wall of sticky notes</span>
+    </div>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <div class="copy-row">
+    <button id="copy">📋 Copy my plan</button>
+  </div>
+
+  <footer>
+    <span class="hand">cooked up with one input and a little multiplication</span>
+    <span class="credit">made by <strong>Raj Shah</strong> ✨</span>
+  </footer>
+</div>
+
+<canvas id="confetti"></canvas>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const LB = 2.20462;
+
+  const els = {
+    weight: $('#weight'), slider: $('#slider'), chips: $('#chips'), go: $('#go'),
+    results: $('#results'), mathSection: $('#mathSection'), steps: $('#steps'),
+    field: $('#field'), cups: $('#cups'), copy: $('#copy'),
+  };
+
+  let unit = 'kg';
+  let last = null;       // last computed values (kg-based)
+  let revealed = false;
+
+  /* ---------- core formula ---------- */
+  function calc(kg){
+    const calories = kg * 26;
+    const protein  = kg * 2;
+    const fat      = calories / 30;
+    const fiber    = calories * 0.014;
+    const carbs    = (calories - protein * 4 - fat * 9) / 4;
+    const water    = kg / 30;
+    return { kg, calories, protein, fat, fiber, carbs, water };
+  }
+
+  /* ---------- number count-up ---------- */
+  function countUp(el, to, fmt){
+    const from = parseFloat(el.dataset.v ?? 0);
+    el.dataset.v = to;
+    const render = v => el.textContent = fmt(v);
+    if (RM){ render(to); return; }
+    const t0 = performance.now(), dur = 550;
+    (function tick(t){
+      const p = Math.min(1, (t - t0) / dur);
+      render(from + (to - from) * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+  const int = v => Math.round(v).toLocaleString('en-US');
+  const one = v => v.toFixed(1);
+
+  /* ---------- confetti ---------- */
+  const cv = $('#confetti'), ctx = cv.getContext('2d');
+  let parts = [], rafId = null;
+  function sizeCanvas(){ cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); }
+  sizeCanvas(); addEventListener('resize', sizeCanvas);
+  const COLORS = ['#ffd9a0','#ffc2d4','#fdf3a0','#b8f3ea','#cdf3c2','#bcdcff','#ff8c42','#f43f7f'];
+  function burst(x, y){
+    if (RM) return;
+    for (let i = 0; i < 80; i++){
+      parts.push({ x, y, vx:(Math.random()-.5)*12, vy:-(Math.random()*11+5), s:4+Math.random()*6,
+        c:COLORS[i % COLORS.length], r:Math.random()*Math.PI, vr:(Math.random()-.5)*.35, life:60+Math.random()*35 });
+    }
+    if (!rafId) rafId = requestAnimationFrame(step);
+  }
+  function step(){
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+    parts = parts.filter(p => p.life > 0);
+    for (const p of parts){
+      p.vy += .32; p.x += p.vx; p.y += p.vy; p.r += p.vr; p.life--;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+      ctx.globalAlpha = Math.min(1, p.life/25); ctx.fillStyle = p.c;
+      ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*1.4); ctx.restore();
+    }
+    rafId = parts.length ? requestAnimationFrame(step) : (ctx.clearRect(0,0,innerWidth,innerHeight), null);
+  }
+
+  /* ---------- water cups ---------- */
+  function renderCups(liters){
+    const glass = 0.25;
+    const n = Math.min(16, Math.max(1, Math.ceil(liters / glass)));
+    if (els.cups.childElementCount !== n){
+      els.cups.innerHTML = '';
+      for (let i = 0; i < n; i++){
+        const cup = document.createElement('span');
+        cup.className = 'cup';
+        const fill = document.createElement('i');
+        cup.appendChild(fill);
+        els.cups.appendChild(cup);
+      }
+    }
+    [...els.cups.children].forEach((cup, i) => {
+      const fill = Math.max(0, Math.min(1, (liters - i * glass) / glass));
+      const bar = cup.firstChild;
+      bar.style.transitionDelay = (RM ? 0 : i * 45) + 'ms';
+      requestAnimationFrame(() => bar.style.height = (fill * 100).toFixed(1) + '%');
+      cup.classList.toggle('full', fill > .98);
+    });
+  }
+
+  /* ---------- math trail steps ---------- */
+  function renderSteps(r){
+    const kgTxt = (Math.round(r.kg * 10) / 10).toLocaleString('en-US');
+    const kcalTxt = int(r.calories);
+    const items = [
+      { n:1, op:`${kgTxt} <small>kg</small> × 26`,            res:int(r.calories), unit:'kcal', c:'var(--note-cal)', e:'🔥' },
+      { n:2, op:`${kgTxt} <small>kg</small> × 2`,             res:int(r.protein),  unit:'g protein', c:'var(--note-pro)', e:'🥩' },
+      { n:3, op:`${kcalTxt} <small>kcal</small> ÷ 30`,        res:int(r.fat),      unit:'g fat', c:'var(--note-fat)', e:'🥑' },
+      { n:4, op:`${kcalTxt} <small>kcal</small> × 0.014`,     res:int(r.fiber),    unit:'g fiber', c:'var(--note-fib)', e:'🥦' },
+      { n:5, op:`(${kcalTxt} − ${int(r.protein)}×4 − ${int(r.fat)}×9) ÷ 4`, res:int(r.carbs), unit:'g carbs', c:'var(--note-car)', e:'🍚' },
+      { n:6, op:`${kgTxt} <small>kg</small> ÷ 30`,            res:one(r.water),    unit:'L water', c:'var(--note-wat)', e:'💧' },
+    ];
+    els.steps.innerHTML = items.map(it => `
+      <div class="step">
+        <span class="n">${it.n}</span>
+        <span class="op">${it.op}</span>
+        <span class="arrow">→</span>
+        <span class="res" style="--c:${it.c}">${it.e} ${it.res} <small>${it.unit}</small></span>
+      </div>`).join('');
+  }
+
+  /* ---------- main update ---------- */
+  function recalc(){
+    const raw = parseFloat(els.weight.value);
+    const valid = Number.isFinite(raw) && raw >= 20 && raw <= 400;
+    els.results.classList.toggle('empty', !valid);
+    els.mathSection.classList.toggle('empty', !valid);
+    if (!valid) return;
+
+    const r = calc(unit === 'kg' ? raw : raw / LB);
+    last = r;
+
+    countUp($('#calories'), r.calories, int);
+    countUp($('#centerCal'), r.calories, int);
+    countUp($('#protein'), r.protein, int);
+    countUp($('#carbs'), r.carbs, int);
+    countUp($('#fat'), r.fat, int);
+    countUp($('#fiber'), r.fiber, int);
+    countUp($('#water'), r.water, one);
+
+    // donut (protein & carbs 4 kcal/g, fat 9 kcal/g)
+    const pC = r.protein*4, cC = r.carbs*4, fC = r.fat*9, tot = r.calories;
+    const C = 2 * Math.PI * 70, gap = 3;
+    const segs = [[ $('#segP'), pC ], [ $('#segC'), cC ], [ $('#segF'), fC ]];
+    let start = 0;
+    for (const [el, val] of segs){
+      const len = Math.max(0, val / tot * C);
+      el.style.strokeDasharray = `${Math.max(0, len - gap)} ${C}`;
+      el.style.strokeDashoffset = -start;
+      start += len;
+    }
+    const pct = v => Math.round(v / tot * 100) + '%';
+    $('#pctP').textContent = pct(pC); $('#pctC').textContent = pct(cC); $('#pctF').textContent = pct(fC);
+    $('#gPcal').textContent = int(pC) + ' kcal'; $('#gCcal').textContent = int(cC) + ' kcal'; $('#gFcal').textContent = int(fC) + ' kcal';
+
+    // bars (macros relative to the biggest; fiber & calories vs sensible caps)
+    const maxMacro = Math.max(r.protein, r.carbs, r.fat);
+    $('#barPro').style.width = (r.protein / maxMacro * 100) + '%';
+    $('#barCar').style.width = (r.carbs  / maxMacro * 100) + '%';
+    $('#barFat').style.width = (r.fat    / maxMacro * 100) + '%';
+    $('#barCal').style.width = '100%';
+    const fibTarget = 30;
+    $('#barFib').style.width = Math.min(100, r.fiber / fibTarget * 100) + '%';
+    $('#funFib').innerHTML = r.fiber >= fibTarget
+      ? `≈ ${int(r.fiber/4.5)} apples a day — <span class="fib-done">🎯 30 g target crushed</span>`
+      : `≈ ${int(r.fiber/4.5)} apples a day · ${Math.round(r.fiber/fibTarget*100)}% of the 30 g target`;
+
+    $('#funCal').textContent = `≈ ${int(r.calories/285)} pizza slices 🍕`;
+    $('#funPro').textContent = `≈ ${int(r.protein/46)} chicken breasts 🍗`;
+    $('#funCar').textContent = `≈ ${int(r.carbs/27)} bananas 🍌`;
+    $('#funFat').textContent = `≈ ${int(r.fat/14)} avocados 🥑`;
+    $('#funWat').textContent = `≈ ${Math.round(r.water*4)} glasses (250 ml) — yes, that's a few bathroom trips 🚻`;
+
+    renderCups(r.water);
+    renderSteps(r);
+
+    if (!revealed){ revealed = true; revealCards(); }
+  }
+
+  function revealCards(){
+    document.querySelectorAll('.card').forEach((c, i) => {
+      setTimeout(() => c.classList.add('show'), RM ? 0 : 90 * i);
+    });
+  }
+
+  /* ---------- input plumbing ---------- */
+  function clampInput(){
+    const raw = parseFloat(els.weight.value);
+    if (Number.isFinite(raw)) els.slider.value = Math.min(160, Math.max(40, raw));
+  }
+  els.weight.addEventListener('input', () => { clampInput(); recalc(); });
+  els.slider.addEventListener('input', () => { els.weight.value = els.slider.value; recalc(); });
+  els.weight.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+
+  document.querySelectorAll('.unit-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.unit === unit) return;
+      const old = parseFloat(els.weight.value);
+      unit = btn.dataset.unit;
+      document.querySelectorAll('.unit-toggle button').forEach(b => b.classList.toggle('active', b === btn));
+      if (Number.isFinite(old)){
+        const conv = unit === 'kg' ? old / LB : old * LB;
+        els.weight.value = Math.round(conv * 10) / 10;
+        els.slider.min = unit === 'kg' ? 40 : 88;
+        els.slider.max = unit === 'kg' ? 160 : 352;
+        clampInput();
+      }
+      renderChips();
+      recalc();
+    });
+  });
+
+  function renderChips(){
+    const kgs = [50, 60, 70, 80, 90, 100];
+    els.chips.innerHTML = '';
+    kgs.forEach(kg => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      const v = unit === 'kg' ? kg : Math.round(kg * LB);
+      b.textContent = v;
+      b.setAttribute('aria-label', `Set weight to ${v} ${unit}`);
+      b.addEventListener('click', () => { els.weight.value = v; clampInput(); recalc(); });
+      els.chips.appendChild(b);
+    });
+  }
+  renderChips();
+
+  function go(){
+    const raw = parseFloat(els.weight.value);
+    if (!Number.isFinite(raw) || raw < 20 || raw > 400){
+      els.field.classList.remove('shake');
+      void els.field.offsetWidth;
+      els.field.classList.add('shake');
+      els.weight.focus();
+      return;
+    }
+    recalc();
+    const rect = els.go.getBoundingClientRect();
+    burst(rect.left + rect.width/2, rect.top);
+    if (!RM) setTimeout(() => $('#results').scrollIntoView({ behavior:'smooth', block:'start' }), 120);
+  }
+  els.go.addEventListener('click', go);
+
+  /* ---------- copy plan ---------- */
+  els.copy.addEventListener('click', async () => {
+    if (!last){ go(); }
+    if (!last) return;
+    const r = last;
+    const txt =
+`MY DAILY NUMBERS (${(Math.round(r.kg*10)/10)} kg)
+🔥 Calories: ${int(r.calories)} kcal
+🥩 Protein: ${int(r.protein)} g
+🍚 Carbs: ${int(r.carbs)} g
+🥑 Fat: ${int(r.fat)} g
+🥦 Fiber: ${int(r.fiber)} g
+💧 Water: ${one(r.water)} L (~${Math.round(r.water*4)} glasses)
+— macro·math`;
+    try{
+      await navigator.clipboard.writeText(txt);
+      els.copy.textContent = '✅ Copied!';
+    }catch{
+      els.copy.textContent = txt;
+    }
+    setTimeout(() => els.copy.textContent = '📋 Copy my plan', 1800);
+  });
+
+  /* ---------- gentle demo fill ---------- */
+  els.weight.value = 70;
+  recalc();
+})();
+</script>
+</body>
+</html>
